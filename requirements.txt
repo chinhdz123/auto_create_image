@@ -1,0 +1,4 @@
+pyautogui
+pyperclip
+opencv-python
+numpy==1.24.3
