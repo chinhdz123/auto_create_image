@@ -109,27 +109,30 @@ def change_conv():
     x1, y1 = pyautogui.locateCenterOnScreen(r'tmp/image/new_conv.png', confidence=0.8)
     pyautogui.click(x1, y1)
     pyautogui.sleep(2)
-    #clich tạo hình ảnh
-    x2, y2 = pyautogui.locateCenterOnScreen(r'tmp/image/create_image.png', confidence=0.8)
+    #clich tác nhân
+    x2, y2 = pyautogui.locateCenterOnScreen(r'tmp/image/tacnhan.png', confidence=0.8)
     pyautogui.click(x2, y2)
     pyautogui.sleep(2)
+    #clich tạo hình ảnh
+    pyautogui.click(x2 + 10, y2 - 130)
+    pyautogui.sleep(2)
 
-thresh_change = 50
+thresh_change = 20
 
 path_folder_background = r"D:\arrow\project\hazardous\dataset\Data.segmentation.Version 3.yolo\Data.segmentation.Version 3.yolo\val\images"
 images_names = [name for name in os.listdir(path_folder_background)] #lấy tên tất cả ảnh trong folder
-start_name = images_names[0]
+pre_name = "" # nhập tên ảnh muốn bắt đầu từ đó, để trống nếu muốn từ đầu
+if pre_name and pre_name in images_names:
+    images_names = images_names[images_names.index(pre_name)+1:] #lấy tên tất cả ảnh trong folder từ ảnh có tên pre_name trở đi
 
-
-for i in range(1, len(images_names)):
+for i in range(len(images_names)):
     #nếu i % thresh_change == 0 và i != 0 thì đổi conversation
     if i % thresh_change == 0 and i != 0:
         change_conv()
-    name = str(start_name)
+    name = images_names[i]
     prompt = random.choice(prompts)
-    success = auto_gen_image(prompt, start_name)
+    success = auto_gen_image(prompt, name)
     if not success:
         print("Image generation failed.")
         break
     print("Generated image for background:", images_names[i])
-    start_name = images_names[i]
