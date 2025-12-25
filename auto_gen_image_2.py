@@ -1,12 +1,13 @@
+"""Cho phép up 1 ảnh background và tạo ảnh mới dựa trên prompt."""
 
 import pyautogui
 import pyperclip
 import cv2
 import numpy as np
 import random
-from prompts.prompt import prompts
+from prompts.prompt2 import prompts
 from image_aere import image_x, image_y
-
+import os
 def is_similar_to_dark(img, dark_img, threshold=5):
     gray1 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(dark_img, cv2.COLOR_BGR2GRAY)
@@ -17,14 +18,42 @@ def is_similar_to_dark(img, dark_img, threshold=5):
     return mean_diff < threshold
 
 def auto_gen_image(prompt: str, name:str) -> bool:
-    #1 click the text input area
+    #click add image button
+    try:
+        x_add, y_add = pyautogui.locateCenterOnScreen(r'tmp/image/add.png', confidence=0.8)
+        pyautogui.click(x_add, y_add)
+    except Exception as e:
+        pyautogui.press("esc")
+        pyautogui.sleep(1)
+        return True
+    pyautogui.sleep(1)
+    #click choose file button
+    try:
+        x_choose, y_choose = pyautogui.locateCenterOnScreen(r'tmp/image/upload.png', confidence=0.8)
+        pyautogui.click(x_choose, y_choose)
+    except Exception as e:
+        pyautogui.press("esc")
+        pyautogui.sleep(1)
+        return True
+    
+    pyautogui.sleep(2)
+    #paste the name of the image
+    pyperclip.copy(str(name))
+    pyautogui.hotkey("ctrl", "v")
+    pyautogui.sleep(0.5)
+    pyautogui.press("enter")
+    pyautogui.sleep(2)
+
+
+    # 1 click the text input area
     try:
         x, y = pyautogui.locateCenterOnScreen(r'tmp/image/input_text.png', confidence=0.8)
     except Exception as e:
         pyautogui.press("esc")
         pyautogui.sleep(1)
         return True
-    #2 paste the prompt
+    # 2 paste the prompt
+
     pyautogui.click(x, y)
     pyperclip.copy(prompt)
     pyautogui.hotkey("ctrl", "v")
@@ -32,12 +61,14 @@ def auto_gen_image(prompt: str, name:str) -> bool:
     #enter to submit
     pyautogui.press("enter")
     pyautogui.sleep(2)
+    #cuộn xuống để thấy ảnh
+    pyautogui.scroll(-500)
     #wait for generation
     #vùng ảnh là x,y,w,h = image_x, image_y, 30, 30
     #kiểm tra nếu ảnh đó chỉ có 1 màu thì chờ tiếp
     i = 0
     has_image = False
-    while i < 15:
+    while i < 20:
         dark_screen_img = cv2.imread(r'tmp/image/dark_screen.png')
         dark_w, dark_h, _ = dark_screen_img.shape
         screenshot = pyautogui.screenshot(region=(image_x, image_y, dark_h, dark_w))
@@ -48,6 +79,8 @@ def auto_gen_image(prompt: str, name:str) -> bool:
         # Bạn có thể chỉnh số 3 thành 0 nếu muốn tuyệt đối, hoặc 5-10 nếu ảnh có chút nhiễu
         if has_image:
             print(f"Ảnh đang đơn sắc (chưa load xong), đợi thêm... (Lần {i+1})")
+            pyautogui.click(50, image_y)
+            pyautogui.scroll(-500)
             pyautogui.sleep(5)
             i += 1
         else:
@@ -81,17 +114,22 @@ def change_conv():
     pyautogui.click(x2, y2)
     pyautogui.sleep(2)
 
-thresh_change = 20
-num_images = 50
-start_name = 92
-for i in range(num_images):
+thresh_change = 50
+
+path_folder_background = r"D:\arrow\project\hazardous\dataset\Data.segmentation.Version 3.yolo\Data.segmentation.Version 3.yolo\val\images"
+images_names = [name for name in os.listdir(path_folder_background)] #lấy tên tất cả ảnh trong folder
+start_name = images_names[0]
+
+
+for i in range(1, len(images_names)):
     #nếu i % thresh_change == 0 và i != 0 thì đổi conversation
     if i % thresh_change == 0 and i != 0:
         change_conv()
     name = str(start_name)
     prompt = random.choice(prompts)
-    success = auto_gen_image(prompt, name)
+    success = auto_gen_image(prompt, start_name)
     if not success:
         print("Image generation failed.")
         break
-    start_name += 1
+    print("Generated image for background:", images_names[i])
+    start_name = images_names[i]
